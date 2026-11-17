@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>英文单词每日速记 · C# 方法速查</title>
+<style>
+:root{
+  --bg:#0f172a; --bg2:#1e293b; --card:#1e293b; --card2:#273449;
+  --txt:#e2e8f0; --sub:#94a3b8; --acc:#38bdf8; --ok:#22c55e; --bad:#f87171;
+  --warn:#fbbf24;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:linear-gradient(160deg,#0f172a,#1e293b);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;padding:16px 14px 40px;max-width:760px;margin:0 auto}
+h1{font-size:20px;display:flex;align-items:center;gap:8px}
+h1 .logo{background:linear-gradient(135deg,#38bdf8,#6366f1);-webkit-background-clip:text;background-clip:text;color:transparent}
+.date{color:var(--sub);font-size:13px;margin-top:4px}
+.seg{display:flex;gap:8px;margin:16px 0 12px;background:var(--bg2);padding:5px;border-radius:14px}
+.seg button{flex:1;padding:10px;border:none;border-radius:10px;background:transparent;color:var(--sub);font-size:15px;font-weight:600;cursor:pointer;transition:.2s}
+.seg button.on{background:var(--acc);color:#06222e}
+.toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.btn{padding:9px 14px;border:none;border-radius:10px;background:var(--card2);color:var(--txt);font-size:14px;font-weight:600;cursor:pointer;border:1px solid #334155}
+.btn.acc{background:var(--acc);color:#06222e}
+.btn.warn{background:#5b4a26;color:#fde68a}
+.hint{color:var(--sub);font-size:13px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid #334155;border-radius:16px;padding:16px;margin-bottom:12px}
+.study{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.study .w{font-size:22px;font-weight:800;color:#e0f2fe}
+.study .p{color:var(--acc);font-size:15px;font-family:"Segoe UI",sans-serif}
+.study .zh{color:var(--warn);font-weight:700;font-size:16px}
+.detail{color:var(--sub);font-size:13px;margin-top:10px;border-top:1px dashed #334155;padding-top:10px;display:none}
+.card.open .detail{display:block}
+.card .toggle{color:var(--acc);font-size:12px;margin-top:8px;cursor:pointer;user-select:none}
+.test-row{padding:12px 0;border-bottom:1px solid #1e293b}
+.test-q{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.test-zh{font-size:16px;font-weight:700}
+.test-cat{color:var(--sub);font-size:12px;background:var(--bg2);padding:2px 8px;border-radius:8px}
+.test-input{width:100%;margin-top:8px;padding:11px 12px;border-radius:10px;border:1px solid #334155;background:#0b1524;color:#fff;font-size:16px}
+.test-input:focus{outline:none;border-color:var(--acc)}
+.test-result{margin-top:8px;font-size:14px;display:none;line-height:1.6}
+.test-result .ans{color:#fff;font-weight:700}
+.res-ok .test-result{display:block;color:var(--ok)}.res-ok .test-input{border-color:var(--ok)}
+.res-bad .test-result{display:block;color:var(--bad)}.res-bad .test-input{border-color:var(--bad)}
+.res-bad .ans{color:#fff}
+.score{position:sticky;top:10px;z-index:5;background:var(--bg2);border:1px solid #334155;border-radius:14px;padding:12px 14px;margin-bottom:14px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.score b{font-size:22px;color:var(--acc)}
+.score .ring{margin-top:6px;height:8px;background:#0b1524;border-radius:99px;overflow:hidden}
+.score .ring i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#6366f1);width:0;transition:.5s;border-radius:99px}
+.empty{color:var(--sub);text-align:center;padding:40px 0}
+.week{font-size:12px;color:var(--sub);margin-top:6px}
+.tag{font-size:12px;color:var(--warn)}
+.adv{color:var(--sub);font-size:12px;margin-top:12px;text-align:center}
+</style>
+</head>
+<body>
+<h1><span class="logo">◈ 每日单词速记</span></h1>
+<div class="date" id="dateBox"></div>
+
+<div class="seg">
+  <button id="segStudy" class="on" onclick="mode('study')">📖 学习</button>
+  <button id="segTest" onclick="mode('test')">✍️ 测试</button>
+</div>
+
+<div class="toolbar">
+  <button class="btn acc" onclick="today()">◉ 今日10词</button>
+  <button class="btn" onclick="fresh()">🎲 换一组</button>
+  <button class="btn warn" onclick="resetAll()">↺ 重做本组</button>
+ <button class="btn" onclick="exportProg()">📤 导出进度</button>
+ <button class="btn" onclick="importProg()">📥 导入进度</button>
+ <button class="btn" onclick="resetProg()">🗑 清空记录</button>
+</div>
+<div class="week" id="progBox" style="display:block;margin:6px 0 10px"></div>
+
+<div id="weekHint" class="week" style="display:none"></div>
+
+<div id="scoreBox" class="score"></div>
+
+<div id="studyBox"></div>
+<div id="testBox" style="display:none">
+  <div class="hint">根据<b>中文翻译</b>填写英文单词（方法名）。填完点「提交」对答案。</div>
+  <div id="testList"></div>
+  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+    <button class="btn acc" style="flex:1;padding:13px" onclick="submit()">✅ 提交答案</button>
+    <button class="btn" style="flex:1;padding:13px" onclick="reveal()">👁 直接看答案</button>
+  </div>
+</div>
+
+<div class="adv">题库共 258 词 · 测试答对自动记为「已掌握」，不再重复推送 · 数据保存在本机浏览器，换设备前记得「导出进度」</div>
+
+<script>
+const TITLE="C# 方法单词速查";
+const WORDS=[{"cat": "一、字符串操作", "w": "Length", "p": "/leŋθ/", "zh": "长度", "ex": "str.Length", "note": "获取字符串的字符数（属性）"}, {"cat": "一、字符串操作", "w": "IndexOf", "p": "/ˈɪndeks ɒv/", "zh": "查找索引", "ex": "str.IndexOf('a')", "note": "返回指定字符/子串首次出现的位置"}, {"cat": "一、字符串操作", "w": "LastIndexOf", "p": "/lɑːst ˈɪndeks ɒv/", "zh": "最后索引", "ex": "str.LastIndexOf('a')", "note": "返回指定字符/子串末次出现的位置"}, {"cat": "一、字符串操作", "w": "Substring", "p": "/ˈsʌbstrɪŋ/", "zh": "截取子串", "ex": "str.Substring(0, 3)", "note": "从 startIndex 取 length 个字符"}, {"cat": "一、字符串操作", "w": "Split", "p": "/splɪt/", "zh": "分割", "ex": "str.Split(',')", "note": "按分隔符拆成 string[]"}, {"cat": "一、字符串操作", "w": "Join", "p": "/dʒɔɪn/", "zh": "连接合并", "ex": "string.Join(\",\", arr)", "note": "把数组/集合拼成一个字符串"}, {"cat": "一、字符串操作", "w": "Replace", "p": "/rɪˈpleɪs/", "zh": "替换", "ex": "str.Replace(\"旧\",\"新\")", "note": "替换所有匹配的字符或子串"}, {"cat": "一、字符串操作", "w": "Trim", "p": "/trɪm/", "zh": "修剪空白", "ex": "str.Trim()", "note": "移除首尾空白字符"}, {"cat": "一、字符串操作", "w": "TrimStart", "p": "/trɪm stɑːt/", "zh": "修剪开头", "ex": "str.TrimStart()", "note": "只移除开头空白"}, {"cat": "一、字符串操作", "w": "TrimEnd", "p": "/trɪm end/", "zh": "修剪结尾", "ex": "str.TrimEnd()", "note": "只移除结尾空白"}, {"cat": "一、字符串操作", "w": "Contains", "p": "/kənˈteɪnz/", "zh": "包含", "ex": "str.Contains(\"xx\")", "note": "判断是否包含指定子串"}, {"cat": "一、字符串操作", "w": "StartsWith", "p": "/stɑːts wɪð/", "zh": "以…开头", "ex": "str.StartsWith(\"A\")", "note": "判断是否以指定字符开头"}, {"cat": "一、字符串操作", "w": "EndsWith", "p": "/endz wɪð/", "zh": "以…结尾", "ex": "str.EndsWith(\"z\")", "note": "判断是否以指定字符结尾"}, {"cat": "一、字符串操作", "w": "ToUpper", "p": "/tuː ˈʌpə/", "zh": "转大写", "ex": "str.ToUpper()", "note": "全部大写"}, {"cat": "一、字符串操作", "w": "ToLower", "p": "/tuː ˈləʊə/", "zh": "转小写", "ex": "str.ToLower()", "note": "全部小写"}, {"cat": "一、字符串操作", "w": "PadLeft", "p": "/pæd left/", "zh": "左侧填充", "ex": "str.PadLeft(5, '0')", "note": "左补齐到指定长度"}, {"cat": "一、字符串操作", "w": "PadRight", "p": "/pæd raɪt/", "zh": "右侧填充", "ex": "str.PadRight(5, '0')", "note": "右补齐到指定长度"}, {"cat": "一、字符串操作", "w": "Insert", "p": "/ɪnˈsɜːt/", "zh": "插入", "ex": "str.Insert(2, \"xx\")", "note": "在指定位置插入字符串"}, {"cat": "一、字符串操作", "w": "Remove", "p": "/rɪˈmuːv/", "zh": "删除", "ex": "str.Remove(2, 3)", "note": "从指定位置删除 N 个字符"}, {"cat": "一、字符串操作", "w": "ToCharArray", "p": "/tuː ˈtʃærəreɪ/", "zh": "转字符数组", "ex": "str.ToCharArray()", "note": "把字符串拆成 char[]"}, {"cat": "一、字符串操作", "w": "IsNullOrEmpty", "p": "/ɪz nʌl ˈɛmpti/", "zh": "空或null", "ex": "string.IsNullOrEmpty(str)", "note": "判断是否为 null 或空串"}, {"cat": "一、字符串操作", "w": "IsNullOrWhiteSpace", "p": "/ɪz nʌl waɪt speɪs/", "zh": "空白或null", "ex": "string.IsNullOrWhiteSpace(str)", "note": "判断是否为 null/空/纯空白"}, {"cat": "一、字符串操作", "w": "Compare", "p": "/kəmˈpeə/", "zh": "比较", "ex": "string.Compare(a, b)", "note": "比较两个字符串（返回 -1/0/1）"}, {"cat": "一、字符串操作", "w": "Equals", "p": "/ˈiːkwəlz/", "zh": "相等", "ex": "str.Equals(\"abc\")", "note": "比较字符串内容是否相等"}, {"cat": "一、字符串操作", "w": "Format", "p": "/ˈfɔːmæt/", "zh": "格式化", "ex": "string.Format(\"{0}\", n)", "note": "格式化字符串（可用 $ 插值替代）"}, {"cat": "二、LINQ 集合操作(上)", "w": "First", "p": "/fɜːst/", "zh": "第一个", "ex": "list.First()", "note": "返回第一个元素，无则抛异常"}, {"cat": "二、LINQ 集合操作(上)", "w": "FirstOrDefault", "p": "/fɜːst ɔː dɪˈfɔːlt/", "zh": "首个或默认", "ex": "list.FirstOrDefault()", "note": "返回第一个，没有则 default(T)"}, {"cat": "二、LINQ 集合操作(上)", "w": "Single", "p": "/ˈsɪŋɡl/", "zh": "唯一", "ex": "list.Single()", "note": "有且只有一个才返回，否则抛异常"}, {"cat": "二、LINQ 集合操作(上)", "w": "SingleOrDefault", "p": "/ˈsɪŋɡl ɔː dɪˈfɔːlt/", "zh": "唯一或默认", "ex": "list.SingleOrDefault()", "note": "唯一则返回，0返回默认，>1抛异常"}, {"cat": "二、LINQ 集合操作(上)", "w": "Last", "p": "/lɑːst/", "zh": "最后一个", "ex": "list.Last()", "note": "返回最后一个"}, {"cat": "二、LINQ 集合操作(上)", "w": "LastOrDefault", "p": "/lɑːst ɔː dɪˈfɔːlt/", "zh": "最后或默认", "ex": "list.LastOrDefault()", "note": "有则最后，无则默认"}, {"cat": "二、LINQ 集合操作(上)", "w": "Where", "p": "/weə/", "zh": "筛选", "ex": "list.Where(x => x > 5)", "note": "按条件过滤，返回 IEnumerable"}, {"cat": "二、LINQ 集合操作(上)", "w": "Select", "p": "/sɪˈlekt/", "zh": "投影映射", "ex": "list.Select(x => x.Name)", "note": "对每个元素做转换"}, {"cat": "二、LINQ 集合操作(上)", "w": "SelectMany", "p": "/sɪˈlekt ˈmeni/", "zh": "展平映射", "ex": "list.SelectMany(x => x.Items)", "note": "把嵌套集合展平成一个序列"}, {"cat": "二、LINQ 集合操作(上)", "w": "OrderBy", "p": "/ˈɔːdə baɪ/", "zh": "升序排列", "ex": "list.OrderBy(x => x.Age)", "note": "按指定键升序"}, {"cat": "二、LINQ 集合操作(上)", "w": "OrderByDescending", "p": "/ˈɔːdə baɪ dɪˈsendɪŋ/", "zh": "降序排列", "ex": "list.OrderByDesc(x => x.Age)", "note": "按指定键降序"}, {"cat": "二、LINQ 集合操作(上)", "w": "ThenBy", "p": "/ðen baɪ/", "zh": "次级排序", "ex": "list.ThenBy(x => x.Name)", "note": "OrderBy 后再按另一键升序"}, {"cat": "二、LINQ 集合操作(上)", "w": "ThenByDescending", "p": "/ðen baɪ dɪˈsendɪŋ/", "zh": "次级降序", "ex": "list.ThenByDesc(x => x.Name)", "note": "OrderBy 后再按另一键降序"}, {"cat": "二、LINQ 集合操作(上)", "w": "Any", "p": "/ˈeni/", "zh": "是否存在", "ex": "list.Any(x => x > 0)", "note": "有满足条件的元素？返回 bool"}, {"cat": "二、LINQ 集合操作(上)", "w": "All", "p": "/ɔːl/", "zh": "全部满足", "ex": "list.All(x => x > 0)", "note": "全部满足条件？返回 bool"}, {"cat": "二、LINQ 集合操作(上)", "w": "Contains", "p": "/kənˈteɪnz/", "zh": "包含", "ex": "list.Contains(item)", "note": "判断是否包含某元素"}, {"cat": "二、LINQ 集合操作(上)", "w": "Count", "p": "/kaʊnt/", "zh": "计数", "ex": "list.Count()", "note": "元素个数"}, {"cat": "二、LINQ 集合操作(上)", "w": "LongCount", "p": "/lɒŋ kaʊnt/", "zh": "长计数", "ex": "list.LongCount()", "note": "超大数据集用，返回 long"}, {"cat": "二、LINQ 集合操作(上)", "w": "Max", "p": "/mæks/", "zh": "最大值", "ex": "list.Max()", "note": "最大值"}, {"cat": "二、LINQ 集合操作(上)", "w": "Min", "p": "/mɪn/", "zh": "最小值", "ex": "list.Min()", "note": "最小值"}, {"cat": "二、LINQ 集合操作(上)", "w": "Sum", "p": "/sʌm/", "zh": "总和", "ex": "list.Sum()", "note": "求和"}, {"cat": "二、LINQ 集合操作(上)", "w": "Average", "p": "/ˈævərɪdʒ/", "zh": "平均值", "ex": "list.Average()", "note": "求平均"}, {"cat": "二、LINQ 集合操作(上)", "w": "Aggregate", "p": "/ˈæɡrɪɡeɪt/", "zh": "自定义聚合", "ex": "list.Aggregate((a,b) => a + b)", "note": "自定义累加逻辑"}, {"cat": "二、LINQ 集合操作(上)", "w": "Distinct", "p": "/dɪˈstɪŋkt/", "zh": "去重", "ex": "list.Distinct()", "note": "去除重复元素"}, {"cat": "三、LINQ 集合操作(下)", "w": "Skip", "p": "/skɪp/", "zh": "跳过", "ex": "list.Skip(2)", "note": "跳过前 N 个"}, {"cat": "三、LINQ 集合操作(下)", "w": "Take", "p": "/teɪk/", "zh": "取前N个", "ex": "list.Take(3)", "note": "取前 N 个"}, {"cat": "三、LINQ 集合操作(下)", "w": "SkipWhile", "p": "/skɪp waɪl/", "zh": "跳过直到", "ex": "list.SkipWhile(x => x < 0)", "note": "跳过满足条件的元素（遇到不满足就停）"}, {"cat": "三、LINQ 集合操作(下)", "w": "TakeWhile", "p": "/teɪk waɪl/", "zh": "取直到", "ex": "list.TakeWhile(x => x < 0)", "note": "取满足条件的元素（遇到不满足就停）"}, {"cat": "三、LINQ 集合操作(下)", "w": "ToList", "p": "/tuː lɪst/", "zh": "转列表", "ex": "list.ToList()", "note": "转为 List<T>"}, {"cat": "三、LINQ 集合操作(下)", "w": "ToArray", "p": "/tuː əˈreɪ/", "zh": "转数组", "ex": "list.ToArray()", "note": "转为 T[]"}, {"cat": "三、LINQ 集合操作(下)", "w": "ToDictionary", "p": "/tuː dɪkˈʃənəri/", "zh": "转字典", "ex": "list.ToDictionary(x => x.Id)", "note": "转为 Dictionary<K, V>"}, {"cat": "三、LINQ 集合操作(下)", "w": "ToLookup", "p": "/tuː ˈlʊkʌp/", "zh": "转查找表", "ex": "list.ToLookup(x => x.Category)", "note": "转为一对多字典"}, {"cat": "三、LINQ 集合操作(下)", "w": "Concat", "p": "/kɒŋˈkæt/", "zh": "连接序列", "ex": "list1.Concat(list2)", "note": "拼接两个序列（不去重）"}, {"cat": "三、LINQ 集合操作(下)", "w": "Union", "p": "/ˈjuːniən/", "zh": "并集", "ex": "list1.Union(list2)", "note": "合并并去重"}, {"cat": "三、LINQ 集合操作(下)", "w": "Intersect", "p": "/ˌɪntəˈsekt/", "zh": "交集", "ex": "list1.Intersect(list2)", "note": "返回两个集合都有的元素"}, {"cat": "三、LINQ 集合操作(下)", "w": "Except", "p": "/ɪkˈsept/", "zh": "差集", "ex": "list1.Except(list2)", "note": "返回 list1 有但 list2 没有的"}, {"cat": "三、LINQ 集合操作(下)", "w": "Zip", "p": "/zɪp/", "zh": "拉链合并", "ex": "list1.Zip(list2, (a,b) => ...)", "note": "按索引合并两个序列为元组"}, {"cat": "三、LINQ 集合操作(下)", "w": "Append", "p": "/əˈpend/", "zh": "追加末尾", "ex": "list.Append(item)", "note": "不改变原集合，返回新序列"}, {"cat": "三、LINQ 集合操作(下)", "w": "Prepend", "p": "/priːˈpend/", "zh": "插入开头", "ex": "list.Prepend(item)", "note": "在序列开头加一个元素"}, {"cat": "三、LINQ 集合操作(下)", "w": "DefaultIfEmpty", "p": "/dɪˈfɔːlt ɪf ˈɛmpti/", "zh": "空则默认", "ex": "list.DefaultIfEmpty()", "note": "集合为空时返回含默认值的单元素序列"}, {"cat": "三、LINQ 集合操作(下)", "w": "SequenceEqual", "p": "/ˈsiːkwəns ˈiːkwəlz/", "zh": "序列相等", "ex": "list1.SequenceEqual(list2)", "note": "逐个元素比较两个序列"}, {"cat": "三、LINQ 集合操作(下)", "w": "ElementAt", "p": "/ˈɛlɪmənt æt/", "zh": "索引取元素", "ex": "list.ElementAt(2)", "note": "返回指定索引位置的元素"}, {"cat": "三、LINQ 集合操作(下)", "w": "ElementAtOrDefault", "p": "/ˈɛlɪmənt æt ɔː dɪˈfɔːlt/", "zh": "索引取或默认", "ex": "list.ElementAtOrDefault(99)", "note": "索引越界返回默认值不抛异常"}, {"cat": "三、LINQ 集合操作(下)", "w": "OfType", "p": "/ɒv taɪp/", "zh": "按类型筛选", "ex": "list.OfType<string>()", "note": "筛选出指定类型的元素"}, {"cat": "三、LINQ 集合操作(下)", "w": "AsEnumerable", "p": "/æz ɪnˈjuːmərəbl/", "zh": "转可枚举", "ex": "list.AsEnumerable()", "note": "显式转为 IEnumerable"}, {"cat": "三、LINQ 集合操作(下)", "w": "AsParallel", "p": "/æz ˈpærəlel/", "zh": "并行执行", "ex": "list.AsParallel().Where(...)", "note": "启用 PLINQ 并行查询"}, {"cat": "四、List 集合操作", "w": "Add", "p": "/æd/", "zh": "添加", "ex": "list.Add(item)", "note": "向集合末尾添加一个元素"}, {"cat": "四、List 集合操作", "w": "AddRange", "p": "/æd reɪndʒ/", "zh": "批量添加", "ex": "list.AddRange(otherList)", "note": "批量添加多个元素"}, {"cat": "四、List 集合操作", "w": "Remove", "p": "/rɪˈmuːv/", "zh": "移除", "ex": "list.Remove(item)", "note": "移除指定元素（返回 bool）"}, {"cat": "四、List 集合操作", "w": "RemoveAt", "p": "/rɪˈmuːv æt/", "zh": "按索引移除", "ex": "list.RemoveAt(2)", "note": "移除指定索引处的元素"}, {"cat": "四、List 集合操作", "w": "RemoveAll", "p": "/rɪˈmuːv ɔːl/", "zh": "按条件移除", "ex": "list.RemoveAll(x => x < 0)", "note": "移除所有满足条件的元素"}, {"cat": "四、List 集合操作", "w": "RemoveRange", "p": "/rɪˈmuːv reɪndʒ/", "zh": "批量移除", "ex": "list.RemoveRange(0, 3)", "note": "移除从 index 开始的 N 个元素"}, {"cat": "四、List 集合操作", "w": "Clear", "p": "/klɪə/", "zh": "清空", "ex": "list.Clear()", "note": "移除所有元素"}, {"cat": "四、List 集合操作", "w": "Insert", "p": "/ɪnˈsɜːt/", "zh": "插入指定位置", "ex": "list.Insert(0, item)", "note": "在指定索引处插入元素"}, {"cat": "四、List 集合操作", "w": "IndexOf", "p": "/ˈɪndeks ɒv/", "zh": "查找索引", "ex": "list.IndexOf(item)", "note": "查找元素首次出现的位置"}, {"cat": "四、List 集合操作", "w": "Find", "p": "/faɪnd/", "zh": "查找", "ex": "list.Find(x => x.Id == 1)", "note": "按条件查找第一个匹配的元素"}, {"cat": "四、List 集合操作", "w": "FindAll", "p": "/faɪnd ɔːl/", "zh": "查找全部", "ex": "list.FindAll(x => x.Age > 18)", "note": "按条件查找所有匹配的元素"}, {"cat": "四、List 集合操作", "w": "FindIndex", "p": "/faɪnd ˈɪndeks/", "zh": "查找条件索引", "ex": "list.FindIndex(x => x.Id == 1)", "note": "按条件查找索引"}, {"cat": "四、List 集合操作", "w": "Exists", "p": "/ɪɡˈzɪsts/", "zh": "存在判断", "ex": "list.Exists(x => x.Id == 1)", "note": "判断是否有元素满足条件"}, {"cat": "四、List 集合操作", "w": "TrueForAll", "p": "/truː fɔːr ɔːl/", "zh": "全部满足？", "ex": "list.TrueForAll(x => x > 0)", "note": "判断是否所有元素都满足条件"}, {"cat": "四、List 集合操作", "w": "Sort", "p": "/sɔːt/", "zh": "排序", "ex": "list.Sort()", "note": "就地排序"}, {"cat": "四、List 集合操作", "w": "Reverse", "p": "/rɪˈvɜːs/", "zh": "反转", "ex": "list.Reverse()", "note": "原地反转元素顺序"}, {"cat": "四、List 集合操作", "w": "BinarySearch", "p": "/ˈbaɪnəri sɜːtʃ/", "zh": "二分查找", "ex": "list.BinarySearch(item)", "note": "在已排序集合上二分查找，返回索引"}, {"cat": "四、List 集合操作", "w": "ForEach", "p": "/fɔːr iːtʃ/", "zh": "遍历", "ex": "list.ForEach(x => Console.WriteLine(x))", "note": "对每个元素执行操作"}, {"cat": "五、类型转换 解析", "w": "Parse", "p": "/pɑːz/", "zh": "解析", "ex": "int.Parse(\"123\")", "note": "字符串→类型，失败抛 FormatException"}, {"cat": "五、类型转换 解析", "w": "TryParse", "p": "/traɪ pɑːz/", "zh": "尝试解析", "ex": "int.TryParse(\"123\", out n)", "note": "安全转换，返回 bool"}, {"cat": "五、类型转换 解析", "w": "ToString", "p": "/tuː strɪŋ/", "zh": "转字符串", "ex": "obj.ToString()", "note": "任意对象→字符串表示"}, {"cat": "五、类型转换 解析", "w": "Convert", "p": "/kənˈvɜːt/", "zh": "转换", "ex": "Convert.ToInt32(\"123\")", "note": "通用类型转换（支持 null→0）"}, {"cat": "五、类型转换 解析", "w": "ChangeType", "p": "/tʃeɪndʒ taɪp/", "zh": "改变类型", "ex": "Convert.ChangeType(val, typeof(T))", "note": "运行时动态转换类型"}, {"cat": "五、类型转换 解析", "w": "Cast", "p": "/kɑːst/", "zh": "强制转型", "ex": "(string)obj 或 list.Cast<T>()", "note": "强制类型转换，失败抛异常"}, {"cat": "五、类型转换 解析", "w": "Is", "p": "/ɪz/", "zh": "类型判断", "ex": "obj is string", "note": "判断是否为目标类型（返回 bool）"}, {"cat": "五、类型转换 解析", "w": "As", "p": "/æz/", "zh": "安全转型", "ex": "obj as string", "note": "失败返回 null，不抛异常"}, {"cat": "五、类型转换 解析", "w": "OfType", "p": "/ɒv taɪp/", "zh": "筛选类型", "ex": "list.OfType<Person>()", "note": "取出集合中特定类型的元素"}, {"cat": "五、类型转换 解析", "w": "GetType", "p": "/ɡet taɪp/", "zh": "获取类型", "ex": "obj.GetType()", "note": "获取运行时 Type 对象"}, {"cat": "五、类型转换 解析", "w": "GetHashCode", "p": "/ɡet hæʃ kəʊd/", "zh": "获取哈希码", "ex": "obj.GetHashCode()", "note": "返回对象的哈希值"}, {"cat": "五、类型转换 解析", "w": "TypeOf", "p": "/taɪp ɒv/", "zh": "获取类型", "ex": "typeof(string)", "note": "编译时获取 Type"}, {"cat": "六、序列化 初始化", "w": "Serialize", "p": "/ˈsɪəriəlaɪz/", "zh": "序列化", "ex": "JsonSerializer.Serialize(obj)", "note": "对象→JSON/XML/二进制"}, {"cat": "六、序列化 初始化", "w": "Deserialize", "p": "/diːˈsɪəriəlaɪz/", "zh": "反序列化", "ex": "JsonSerializer.Deserialize<T>(json)", "note": "JSON/XML/二进制→对象"}, {"cat": "六、序列化 初始化", "w": "Initialize", "p": "/ɪˈnɪʃəlaɪz/", "zh": "初始化", "ex": "InitializeComponent()", "note": "WinForms/WPF 初始化控件"}, {"cat": "六、序列化 初始化", "w": "Constructor", "p": "/kənˈstrʌktə/", "zh": "构造函数", "ex": "public Foo() { }", "note": "类实例化时自动调用的方法"}, {"cat": "六、序列化 初始化", "w": "Destructor", "p": "/dɪˈstrʌktə/", "zh": "析构函数", "ex": "~Foo() { }", "note": "对象被 GC 回收时调用"}, {"cat": "六、序列化 初始化", "w": "Activator", "p": "/ˈæktɪveɪtə/", "zh": "激活器", "ex": "Activator.CreateInstance(typeof(T))", "note": "运行时动态创建对象实例"}, {"cat": "六、序列化 初始化", "w": "Default", "p": "/dɪˈfɔːlt/", "zh": "默认值", "ex": "default(int) → 0", "note": "返回类型的默认值"}, {"cat": "六、序列化 初始化", "w": "Ignore", "p": "/ɪɡˈnɔː/", "zh": "忽略", "ex": "[JsonIgnore]", "note": "标记该属性不参与序列化"}, {"cat": "六、序列化 初始化", "w": "PropertyName", "p": "/ˈprɒpəti neɪm/", "zh": "属性命名", "ex": "[JsonPropertyName(\"name\")]", "note": "JSON 键名映射到不同属性名"}, {"cat": "七、异步编程 Async Await", "w": "Async", "p": "/əˈsɪŋk/", "zh": "异步的", "ex": "async Task DoAsync()", "note": "标记方法为异步方法"}, {"cat": "七、异步编程 Async Await", "w": "Await", "p": "/əˈweɪt/", "zh": "等待", "ex": "await task", "note": "等待异步任务完成但不阻塞线程"}, {"cat": "七、异步编程 Async Await", "w": "Task", "p": "/tɑːsk/", "zh": "任务", "ex": "Task.Run(() => ...)", "note": "表示一个异步操作"}, {"cat": "七、异步编程 Async Await", "w": "Run", "p": "/rʌn/", "zh": "运行", "ex": "Task.Run(() => Work())", "note": "在线程池上异步执行"}, {"cat": "七、异步编程 Async Await", "w": "Delay", "p": "/dɪˈleɪ/", "zh": "延迟", "ex": "await Task.Delay(1000)", "note": "异步等待指定毫秒数"}, {"cat": "七、异步编程 Async Await", "w": "WhenAll", "p": "/wen ɔːl/", "zh": "全部完成", "ex": "await Task.WhenAll(t1, t2)", "note": "等待所有任务完成"}, {"cat": "七、异步编程 Async Await", "w": "WhenAny", "p": "/wen ˈeni/", "zh": "任一完成", "ex": "await Task.WhenAny(t1, t2)", "note": "任一任务完成即返回"}, {"cat": "七、异步编程 Async Await", "w": "ContinueWith", "p": "/kənˈtɪnjuː wɪð/", "zh": "续接操作", "ex": "task.ContinueWith(t => ...)", "note": "任务完成后执行后续操作"}, {"cat": "七、异步编程 Async Await", "w": "ConfigureAwait", "p": "/kənˈfɪɡə əˈweɪt/", "zh": "配置等待", "ex": "await task.ConfigureAwait(false)", "note": "配置是否回到原同步上下文"}, {"cat": "七、异步编程 Async Await", "w": "FromResult", "p": "/frɒm rɪˈzʌlt/", "zh": "从结果创建", "ex": "Task.FromResult(42)", "note": "创建已完成的带值 Task"}, {"cat": "七、异步编程 Async Await", "w": "CompletedTask", "p": "/kəmˈpliːtɪd tɑːsk/", "zh": "已完成任务", "ex": "Task.CompletedTask", "note": "获取已完成的 Task"}, {"cat": "七、异步编程 Async Await", "w": "CancellationToken", "p": "/ˈkænsəleɪʃən təʊˈkɛn/", "zh": "取消令牌", "ex": "new CancellationTokenSource().Token", "note": "用于取消异步操作"}, {"cat": "七、异步编程 Async Await", "w": "Cancel", "p": "/ˈkænsəl/", "zh": "取消", "ex": "cts.Cancel()", "note": "触发取消信号"}, {"cat": "八、异常处理", "w": "Throw", "p": "/θrəʊ/", "zh": "抛出", "ex": "throw new Exception()", "note": "抛出一个异常"}, {"cat": "八、异常处理", "w": "Try", "p": "/traɪ/", "zh": "尝试", "ex": "try { ... }", "note": "尝试执行可能出错的代码块"}, {"cat": "八、异常处理", "w": "Catch", "p": "/kætʃ/", "zh": "捕获", "ex": "catch (Exception ex)", "note": "捕获特定类型的异常"}, {"cat": "八、异常处理", "w": "Finally", "p": "/ˈfaɪnəli/", "zh": "最终执行", "ex": "finally { ... }", "note": "无论是否异常都会执行的代码块"}, {"cat": "八、异常处理", "w": "Exception", "p": "/ɪkˈsepʃən/", "zh": "异常", "ex": "new Exception(\"msg\")", "note": "所有异常的基类"}, {"cat": "八、异常处理", "w": "Message", "p": "/ˈmesɪdʒ/", "zh": "异常消息", "ex": "ex.Message", "note": "获取异常的文本描述"}, {"cat": "八、异常处理", "w": "StackTrace", "p": "/stæk treɪs/", "zh": "堆栈跟踪", "ex": "ex.StackTrace", "note": "异常发生时的调用栈信息"}, {"cat": "八、异常处理", "w": "InnerException", "p": "/ˈɪnə ɪkˈsepʃən/", "zh": "内部异常", "ex": "ex.InnerException", "note": "导致当前异常的原始异常"}, {"cat": "八、异常处理", "w": "ArgumentException", "p": "/ɑːˈɡjʊmənt ɪkˈsepʃən/", "zh": "参数异常", "ex": "throw new ArgumentException()", "note": "参数不合法时抛出"}, {"cat": "八、异常处理", "w": "ArgumentNullException", "p": "/ɑːˈɡjʊmənt nʌl/", "zh": "空参数异常", "ex": "throw new ArgumentNullException()", "note": "参数为 null 时抛出"}, {"cat": "八、异常处理", "w": "ArgumentOutOfRangeException", "p": "/ɑːˈɡjʊmənt aʊt ɒv reɪndʒ/", "zh": "参数越界", "ex": "throw new ArgumentOutOfRangeException()", "note": "参数超出有效范围"}, {"cat": "八、异常处理", "w": "InvalidOperationException", "p": "/ɪnˈvælɪd ˌɒpəˈreɪʃən/", "zh": "无效操作", "ex": "throw new InvalidOperationException()", "note": "当前状态不允许此操作"}, {"cat": "八、异常处理", "w": "NotImplementedException", "p": "/nɒt ˈɪmplɪməntɪd/", "zh": "未实现", "ex": "throw new NotImplementedException()", "note": "方法还没写实现时占位"}, {"cat": "八、异常处理", "w": "NullReferenceException", "p": "/nʌl ˈrefərəns ɪkˈsepʃən/", "zh": "空引用", "ex": "访问 null 对象时抛出", "note": "最常见的运行时异常"}, {"cat": "八、异常处理", "w": "Using", "p": "/ˈjuːzɪŋ/", "zh": "自动释放", "ex": "using (var r = new Res()) { }", "note": "离开作用域自动调用 Dispose"}, {"cat": "九、委托 事件 Lambda", "w": "Delegate", "p": "/ˈdelɪɡeɪt/", "zh": "委托", "ex": "delegate void MyDel()", "note": "方法类型的变量，存方法的引用"}, {"cat": "九、委托 事件 Lambda", "w": "Action", "p": "/ˈækʃən/", "zh": "无返回值委托", "ex": "Action f = () => Do()", "note": "无返回值的方法委托"}, {"cat": "九、委托 事件 Lambda", "w": "Func", "p": "/fʌŋk/", "zh": "有返回值委托", "ex": "Func<int, bool> f = x => x > 0", "note": "有返回值的方法委托"}, {"cat": "九、委托 事件 Lambda", "w": "Predicate", "p": "/ˈpredɪkeɪt/", "zh": "条件判定委托", "ex": "Predicate<int> p = x => x > 0", "note": "返回 bool 的委托"}, {"cat": "九、委托 事件 Lambda", "w": "EventHandler", "p": "/ɪˈvent ˈhændlə/", "zh": "事件处理器", "ex": "button.Click += OnClick", "note": "事件的标准委托类型"}, {"cat": "九、委托 事件 Lambda", "w": "Event", "p": "/ɪˈvent/", "zh": "事件", "ex": "public event EventHandler Click", "note": "基于委托的通知机制"}, {"cat": "九、委托 事件 Lambda", "w": "Invoke", "p": "/ɪnˈvəʊk/", "zh": "调用", "ex": "del.Invoke(args)", "note": "执行委托指向的方法"}, {"cat": "九、委托 事件 Lambda", "w": "InvokeRequired", "p": "/ɪnˈvəʊk rɪˈkwaɪəd/", "zh": "需要跨线程调用", "ex": "ctrl.InvokeRequired", "note": "判断是否需要 Invoke 更新UI"}, {"cat": "九、委托 事件 Lambda", "w": "BeginInvoke", "p": "/bɪˈɡɪn ɪnˈvəʊk/", "zh": "异步调用", "ex": "del.BeginInvoke(...)", "note": "异步执行委托"}, {"cat": "九、委托 事件 Lambda", "w": "Callback", "p": "/ˈkɔːlbæk/", "zh": "回调", "ex": "BeginXxx(callback)", "note": "异步操作完成后被调用的方法"}, {"cat": "九、委托 事件 Lambda", "w": "Lambda", "p": "/ˈlæmbdə/", "zh": "Lambda表达式", "ex": "x => x + 1", "note": "匿名函数的简洁写法"}, {"cat": "九、委托 事件 Lambda", "w": "Expression", "p": "/ɪkˈspreʃən/", "zh": "表达式", "ex": "Expression<Func<int, bool>>", "note": "把 Lambda 转成表达式树"}, {"cat": "十、反射 Reflection", "w": "Reflection", "p": "/rɪˈflekʃən/", "zh": "反射", "ex": "System.Reflection", "note": "运行时获取类型元数据的机制"}, {"cat": "十、反射 Reflection", "w": "Assembly", "p": "/əˈsɛmbli/", "zh": "程序集", "ex": "typeof(T).Assembly", "note": "获取类所在的程序集"}, {"cat": "十、反射 Reflection", "w": "Property", "p": "/ˈprɒpəti/", "zh": "属性", "ex": "type.GetProperty(\"Name\")", "note": "获取类型的属性信息"}, {"cat": "十、反射 Reflection", "w": "Field", "p": "/fiːld/", "zh": "字段", "ex": "type.GetField(\"_name\")", "note": "获取类型字段信息"}, {"cat": "十、反射 Reflection", "w": "Method", "p": "/ˈmeθəd/", "zh": "方法", "ex": "type.GetMethod(\"DoWork\")", "note": "获取类型的方法信息"}, {"cat": "十、反射 Reflection", "w": "Parameter", "p": "/pəˈræmɪtə/", "zh": "参数", "ex": "method.GetParameters()", "note": "获取方法的所有参数信息"}, {"cat": "十、反射 Reflection", "w": "Attribute", "p": "/əˈtrɪbjuːt/", "zh": "特性", "ex": "[Obsolete]", "note": "给代码元素添加元数据的标记"}, {"cat": "十、反射 Reflection", "w": "InvokeMember", "p": "/ɪnˈvəʊk ˈmembə/", "zh": "调用成员", "ex": "type.InvokeMember(\"Method\", ...)", "note": "通过名称动态调用方法"}, {"cat": "十、反射 Reflection", "w": "SetValue", "p": "/set ˈvæljuː/", "zh": "设值", "ex": "prop.SetValue(obj, val)", "note": "反射方式给属性赋值"}, {"cat": "十、反射 Reflection", "w": "GetValue", "p": "/ɡet ˈvæljuː/", "zh": "取值", "ex": "prop.GetValue(obj)", "note": "反射方式获取属性值"}, {"cat": "十、反射 Reflection", "w": "CreateInstance", "p": "/kriˈeɪt ˈɪnstəns/", "zh": "创建实例", "ex": "Activator.CreateInstance(typeof(T))", "note": "反射方式创建对象"}, {"cat": "十一、线程 并发", "w": "Thread", "p": "/θred/", "zh": "线程", "ex": "new Thread(DoWork)", "note": "创建并运行新线程"}, {"cat": "十一、线程 并发", "w": "Start", "p": "/stɑːt/", "zh": "启动", "ex": "thread.Start()", "note": "启动线程"}, {"cat": "十一、线程 并发", "w": "Join", "p": "/dʒɔɪn/", "zh": "等待线程", "ex": "thread.Join()", "note": "等待该线程执行完毕"}, {"cat": "十一、线程 并发", "w": "Sleep", "p": "/sliːp/", "zh": "休眠", "ex": "Thread.Sleep(1000)", "note": "当前线程休眠 N 毫秒"}, {"cat": "十一、线程 并发", "w": "Lock", "p": "/lɒk/", "zh": "锁", "ex": "lock (obj) { }", "note": "线程同步锁"}, {"cat": "十一、线程 并发", "w": "Monitor", "p": "/ˈmɒnɪtə/", "zh": "监视器", "ex": "Monitor.Enter / Exit", "note": "lock 的底层实现"}, {"cat": "十一、线程 并发", "w": "Mutex", "p": "/ˈmjuːtɛks/", "zh": "互斥体", "ex": "new Mutex()", "note": "跨进程的同步锁"}, {"cat": "十一、线程 并发", "w": "Semaphore", "p": "/ˈsɛməfɔː/", "zh": "信号量", "ex": "new Semaphore(2, 2)", "note": "限制同时访问的线程数"}, {"cat": "十一、线程 并发", "w": "Interlocked", "p": "/ˌɪntəˈlɒkt/", "zh": "原子操作", "ex": "Interlocked.Increment(ref n)", "note": "线程安全的原子增减操作"}, {"cat": "十一、线程 并发", "w": "Volatile", "p": "/ˈvɒlətaɪl/", "zh": "易变", "ex": "volatile int flag", "note": "告诉编译器该字段可能被多线程修改"}, {"cat": "十一、线程 并发", "w": "Parallel", "p": "/ˈpærəlel/", "zh": "并行", "ex": "Parallel.For(0, n, i => ...)", "note": "并行执行循环"}, {"cat": "十一、线程 并发", "w": "Concurrent", "p": "/kənˈkʌrənt/", "zh": "并发集合", "ex": "ConcurrentDictionary<T>", "note": "线程安全的集合类"}, {"cat": "十二、文件 IO", "w": "Read", "p": "/riːd/", "zh": "读取", "ex": "File.ReadAllText(path)", "note": "读取文件全部文本"}, {"cat": "十二、文件 IO", "w": "ReadAllLines", "p": "/riːd ɔːl laɪnz/", "zh": "读取所有行", "ex": "File.ReadAllLines(path)", "note": "按行读成 string[]"}, {"cat": "十二、文件 IO", "w": "ReadAllBytes", "p": "/riːd ɔːl baɪts/", "zh": "读取所有字节", "ex": "File.ReadAllBytes(path)", "note": "读取二进制文件"}, {"cat": "十二、文件 IO", "w": "ReadLine", "p": "/riːd laɪn/", "zh": "读一行", "ex": "reader.ReadLine()", "note": "从流/控制台读一行文本"}, {"cat": "十二、文件 IO", "w": "ReadToEnd", "p": "/riːd tuː end/", "zh": "读到末尾", "ex": "reader.ReadToEnd()", "note": "从当前位置读到流末尾"}, {"cat": "十二、文件 IO", "w": "Write", "p": "/raɪt/", "zh": "写入", "ex": "File.WriteAllText(path, txt)", "note": "写入文本文件"}, {"cat": "十二、文件 IO", "w": "WriteAllLines", "p": "/raɪt ɔːl laɪnz/", "zh": "写入多行", "ex": "File.WriteAllLines(path, lines)", "note": "写入字符串数组"}, {"cat": "十二、文件 IO", "w": "WriteAllBytes", "p": "/raɪt ɔːl baɪts/", "zh": "写入字节", "ex": "File.WriteAllBytes(path, bytes)", "note": "写入二进制文件"}, {"cat": "十二、文件 IO", "w": "Append", "p": "/əˈpend/", "zh": "追加", "ex": "File.AppendAllText(path, txt)", "note": "在文件末尾追加内容"}, {"cat": "十二、文件 IO", "w": "WriteLine", "p": "/raɪt laɪn/", "zh": "写一行", "ex": "Console.WriteLine(\"hi\")", "note": "向控制台/流输出一行"}, {"cat": "十二、文件 IO", "w": "Open", "p": "/ˈəʊpən/", "zh": "打开", "ex": "File.Open(path, FileMode.Read)", "note": "打开文件返回 FileStream"}, {"cat": "十二、文件 IO", "w": "Close", "p": "/kləʊz/", "zh": "关闭", "ex": "stream.Close()", "note": "关闭流/连接，释放资源"}, {"cat": "十二、文件 IO", "w": "Flush", "p": "/flʌʃ/", "zh": "刷新缓冲区", "ex": "stream.Flush()", "note": "将缓冲区数据立即写入底层"}, {"cat": "十二、文件 IO", "w": "Exists", "p": "/ɪɡˈzɪsts/", "zh": "存在", "ex": "File.Exists(path)", "note": "判断文件是否存在"}, {"cat": "十二、文件 IO", "w": "Copy", "p": "/ˈkɒpi/", "zh": "复制", "ex": "File.Copy(src, dest)", "note": "复制文件"}, {"cat": "十二、文件 IO", "w": "Move", "p": "/muːv/", "zh": "移动", "ex": "File.Move(src, dest)", "note": "移动文件（也可重命名）"}, {"cat": "十二、文件 IO", "w": "Delete", "p": "/dɪˈliːt/", "zh": "删除", "ex": "File.Delete(path)", "note": "删除文件"}, {"cat": "十二、文件 IO", "w": "Create", "p": "/kriˈeɪt/", "zh": "创建", "ex": "File.Create(path)", "note": "创建文件"}, {"cat": "十二、文件 IO", "w": "CreateDirectory", "p": "/kriˈeɪt daɪˈrɛktəri/", "zh": "创建目录", "ex": "Directory.CreateDirectory(path)", "note": "创建目录（自动创建父目录）"}, {"cat": "十二、文件 IO", "w": "GetFiles", "p": "/ɡet faɪlz/", "zh": "获取文件列表", "ex": "Directory.GetFiles(path)", "note": "获取目录下所有文件路径"}, {"cat": "十二、文件 IO", "w": "GetDirectories", "p": "/ɡet daɪˈrɛktəriz/", "zh": "获取子目录", "ex": "Directory.GetDirectories(path)", "note": "获取目录下所有子目录"}, {"cat": "十二、文件 IO", "w": "Seek", "p": "/siːk/", "zh": "定位", "ex": "stream.Seek(0, SeekOrigin.Begin)", "note": "将流中读写位置移到指定处"}, {"cat": "十二、文件 IO", "w": "Position", "p": "/pəˈzɪʃən/", "zh": "当前位置", "ex": "stream.Position", "note": "获取/设置流中的当前位置"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Connection", "p": "/kəˈnekʃən/", "zh": "连接", "ex": "new SqlConnection(connStr)", "note": "数据库连接对象"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Command", "p": "/kəˈmɑːnd/", "zh": "命令", "ex": "new SqlCommand(sql, conn)", "note": "封装要执行的 SQL 语句"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "ExecuteNonQuery", "p": "/ˈɛksɪkjuːt nɒn ˈkwaɪri/", "zh": "执行非查询", "ex": "cmd.ExecuteNonQuery()", "note": "执行 INSERT/UPDATE/DELETE"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "ExecuteScalar", "p": "/ˈɛksɪkjuːt ˈskeɪlə/", "zh": "执行标量查询", "ex": "cmd.ExecuteScalar()", "note": "返回第一行第一列的值"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "ExecuteReader", "p": "/ˈɛksɪkjuːt ˈriːdə/", "zh": "执行读取", "ex": "cmd.ExecuteReader()", "note": "返回 SqlDataReader 逐行读取"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "DataReader", "p": "/ˈdeɪtə ˈriːdə/", "zh": "数据阅读器", "ex": "SqlDataReader.Read()", "note": "只进只读的数据流"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "DataAdapter", "p": "/ˈdeɪtə əˈdæptə/", "zh": "数据适配器", "ex": "new SqlDataAdapter(cmd)", "note": "填充 DataSet 的桥梁"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "DataSet", "p": "/ˈdeɪtə sɛt/", "zh": "数据集", "ex": "new DataSet()", "note": "内存中的数据库（多表）"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "DataTable", "p": "/ˈdeɪtə ˈteɪbl/", "zh": "数据表", "ex": "new DataTable()", "note": "内存中的一张表"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "DataRow", "p": "/ˈdeɪtə rəʊ/", "zh": "数据行", "ex": "dt.Rows[0]", "note": "表中的一行数据"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "DataColumn", "p": "/ˈdeɪtə ˈkɒləm/", "zh": "数据列", "ex": "dt.Columns[\"Name\"]", "note": "表中的一列定义"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Fill", "p": "/fɪl/", "zh": "填充", "ex": "adapter.Fill(dt)", "note": "用数据库结果填充 DataTable"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Update", "p": "/ʌpˈdeɪt/", "zh": "更新回库", "ex": "adapter.Update(dt)", "note": "将 DataTable 的改动写回数据库"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Transaction", "p": "/trænˈzækʃən/", "zh": "事务", "ex": "conn.BeginTransaction()", "note": "一组操作，要么全成功要么全回滚"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Commit", "p": "/kəˈmɪt/", "zh": "提交事务", "ex": "trans.Commit()", "note": "确认事务中的更改"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Rollback", "p": "/ˈrəʊlbæk/", "zh": "回滚事务", "ex": "trans.Rollback()", "note": "撤销事务中的所有更改"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Parameter", "p": "/pəˈræmɪtə/", "zh": "参数", "ex": "cmd.Parameters.Add(\"@id\", value)", "note": "SQL 参数（防 SQL 注入）"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "DbContext", "p": "/diːbiː kɒntɛkst/", "zh": "数据库上下文", "ex": "new MyDbContext()", "note": "EF Core 的数据库会话"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "DbSet", "p": "/diːbiː sɛt/", "zh": "数据集", "ex": "context.Users", "note": "对应数据库中的一张表"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "SaveChanges", "p": "/seɪv ˈtʃeɪndʒɪz/", "zh": "保存更改", "ex": "context.SaveChanges()", "note": "将所有变更写入数据库"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Include", "p": "/ɪnˈkluːd/", "zh": "包含关联", "ex": "context.Users.Include(u => u.Orders)", "note": "预加载导航属性"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "ThenInclude", "p": "/ðen ɪnˈkluːd/", "zh": "嵌套包含", "ex": "context.Include(u => u.Orders).ThenInclude(o => o.Items)", "note": "多级关联加载"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "AsNoTracking", "p": "/æz nəʊ ˈtrækɪŋ/", "zh": "不跟踪", "ex": "context.Users.AsNoTracking()", "note": "只读查询加速"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "Migrate", "p": "/maɪˈɡreɪt/", "zh": "迁移", "ex": "context.Database.Migrate()", "note": "应用 EF Core 迁移"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "LazyLoading", "p": "/ˈleɪzi ˈləʊdɪŋ/", "zh": "懒加载", "ex": "访问导航属性时自动加载", "note": "用到时才加载关联数据"}, {"cat": "十三、数据库 ADO.NET EF Core", "w": "EagerLoading", "p": "/ˈiːɡə ˈləʊdɪŋ/", "zh": "预先加载", "ex": "通过 Include 实现", "note": "提前加载关联数据"}, {"cat": "十四、OOP 面向对象基础", "w": "Class", "p": "/klɑːs/", "zh": "类", "ex": "class MyClass { }", "note": "引用类型的蓝图"}, {"cat": "十四、OOP 面向对象基础", "w": "Struct", "p": "/strʌkt/", "zh": "结构体", "ex": "struct Point { }", "note": "值类型的蓝图"}, {"cat": "十四、OOP 面向对象基础", "w": "Record", "p": "/ˈrekɔːd/", "zh": "记录类型", "ex": "record Person(string Name)", "note": "不可变引用类型，值相等比较"}, {"cat": "十四、OOP 面向对象基础", "w": "Interface", "p": "/ˈɪntəfeɪs/", "zh": "接口", "ex": "interface IComparable { }", "note": "定义契约（方法签名）"}, {"cat": "十四、OOP 面向对象基础", "w": "Abstract", "p": "/ˈæbstrækt/", "zh": "抽象的", "ex": "abstract class Animal", "note": "不能被实例化，只能被继承"}, {"cat": "十四、OOP 面向对象基础", "w": "Sealed", "p": "/siːld/", "zh": "密封的", "ex": "sealed class Final", "note": "不能被继承"}, {"cat": "十四、OOP 面向对象基础", "w": "Static", "p": "/ˈstætɪk/", "zh": "静态的", "ex": "static class Utils", "note": "类级别共享，不用实例化"}, {"cat": "十四、OOP 面向对象基础", "w": "Virtual", "p": "/ˈvɜːtʃuəl/", "zh": "虚方法", "ex": "virtual void Do()", "note": "允许子类重写"}, {"cat": "十四、OOP 面向对象基础", "w": "Override", "p": "/ˌəʊvəˈraɪd/", "zh": "重写", "ex": "override void Do()", "note": "子类覆盖父类的 virtual/abstract 方法"}, {"cat": "十四、OOP 面向对象基础", "w": "New", "p": "/njuː/", "zh": "隐藏父类方法", "ex": "new void Do()", "note": "在子类中隐藏父类非虚方法"}, {"cat": "十四、OOP 面向对象基础", "w": "Base", "p": "/beɪs/", "zh": "父类引用", "ex": "base.Do()", "note": "在子类中调用父类实现"}, {"cat": "十四、OOP 面向对象基础", "w": "This", "p": "/ðɪs/", "zh": "当前实例", "ex": "this.Name = name", "note": "指向当前对象的引用"}, {"cat": "十四、OOP 面向对象基础", "w": "Readonly", "p": "/ˈriːdˌəʊnli/", "zh": "只读", "ex": "readonly int _id", "note": "字段只能在构造函数中赋值"}, {"cat": "十四、OOP 面向对象基础", "w": "Const", "p": "/kɒnst/", "zh": "常量", "ex": "const int Max = 100", "note": "编译时常量，值不可改"}, {"cat": "十四、OOP 面向对象基础", "w": "Property", "p": "/ˈprɒpəti/", "zh": "属性", "ex": "public int Age { get; set; }", "note": "字段的封装器"}, {"cat": "十四、OOP 面向对象基础", "w": "Indexer", "p": "/ˈɪndeksə/", "zh": "索引器", "ex": "public T this[int i] { get; set; }", "note": "让对象像数组一样索引访问"}, {"cat": "十四、OOP 面向对象基础", "w": "Inheritance", "p": "/ɪnˈhɛrɪtəns/", "zh": "继承", "ex": "class Dog : Animal", "note": "子类继承父类成员"}, {"cat": "十四、OOP 面向对象基础", "w": "Polymorphism", "p": "/ˌpɒlɪˈmɔːfɪzəm/", "zh": "多态", "ex": "通过 virtual/override 实现", "note": "同一接口，不同实现"}, {"cat": "十四、OOP 面向对象基础", "w": "Encapsulation", "p": "/ɪnˌkæpsjuˈleɪʃən/", "zh": "封装", "ex": "通过 get/set/private 实现", "note": "隐藏内部实现细节"}, {"cat": "十四、OOP 面向对象基础", "w": "Abstraction", "p": "/əbˈstrækʃən/", "zh": "抽象", "ex": "abstract class / interface", "note": "只暴露功能，隐藏实现"}, {"cat": "十四、OOP 面向对象基础", "w": "Generics", "p": "/dʒɪˈnɛrɪks/", "zh": "泛型", "ex": "List<T>", "note": "参数化类型，编译时类型安全"}, {"cat": "十四、OOP 面向对象基础", "w": "Constraint", "p": "/kənˈstreɪnt/", "zh": "泛型约束", "ex": "where T : class", "note": "限制泛型参数的类型范围"}, {"cat": "十五、常用修饰符 关键字", "w": "Public", "p": "/ˈpʌblɪk/", "zh": "公开的", "ex": "public void Do()", "note": "任何地方都可访问"}, {"cat": "十五、常用修饰符 关键字", "w": "Private", "p": "/ˈpraɪvɪt/", "zh": "私有的", "ex": "private void Do()", "note": "仅当前类可访问"}, {"cat": "十五、常用修饰符 关键字", "w": "Protected", "p": "/prəˈtektɪd/", "zh": "受保护的", "ex": "protected void Do()", "note": "当前类及子类可访问"}, {"cat": "十五、常用修饰符 关键字", "w": "Internal", "p": "/ɪnˈtɜːnl/", "zh": "程序集内", "ex": "internal void Do()", "note": "同一程序集可访问"}, {"cat": "十五、常用修饰符 关键字", "w": "Void", "p": "/vɔɪd/", "zh": "无返回值", "ex": "void Do()", "note": "方法不返回任何值"}, {"cat": "十五、常用修饰符 关键字", "w": "Return", "p": "/rɪˈtɜːn/", "zh": "返回", "ex": "return value;", "note": "从方法返回值或提前退出"}, {"cat": "十五、常用修饰符 关键字", "w": "Break", "p": "/breɪk/", "zh": "跳出循环", "ex": "break;", "note": "退出当前循环"}, {"cat": "十五、常用修饰符 关键字", "w": "Continue", "p": "/kənˈtɪnjuː/", "zh": "继续下次循环", "ex": "continue;", "note": "跳过本次循环剩余部分"}, {"cat": "十五、常用修饰符 关键字", "w": "Foreach", "p": "/fɔːr iːtʃ/", "zh": "遍历", "ex": "foreach (var x in list)", "note": "遍历可枚举集合"}, {"cat": "十五、常用修饰符 关键字", "w": "Yield", "p": "/jiːld/", "zh": "迭代返回", "ex": "yield return item;", "note": "延迟生成序列元素"}, {"cat": "十五、常用修饰符 关键字", "w": "Var", "p": "/vɑː/", "zh": "隐式类型", "ex": "var x = \"hello\"", "note": "编译器推断类型"}, {"cat": "十五、常用修饰符 关键字", "w": "Dynamic", "p": "/daɪˈnæmɪk/", "zh": "动态类型", "ex": "dynamic obj = \"hello\"", "note": "运行时确定类型"}, {"cat": "十五、常用修饰符 关键字", "w": "Nullable", "p": "/ˈnʌlɪəbl/", "zh": "可空类型", "ex": "int? x = null", "note": "值类型也能赋 null"}, {"cat": "十五、常用修饰符 关键字", "w": "Nameof", "p": "/neɪm ɒv/", "zh": "名称运算", "ex": "nameof(x) → \"x\"", "note": "获取变量/成员的字符串名称"}];
+let cur=[];        // 当前批次的单词对象
+let shuffled=[];   // 测试模式显示顺序
+let attempts={};   // id -> user input
+let seen=new Set();
+
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+function pickBySeed(n){const rnd=mulberry32(hash(todayStr()));const pool=[];const u=new Set();while(u.size<10&&pool.length<10){const i=Math.floor(rnd()*n);if(!u.has(i)){u.add(i);pool.push(i);}}return pool;}
+function hash(s){let h=9;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),0x45d9f3b)}return h^h>>>16;}
+
+function loadUnf(){try{return JSON.parse(localStorage.getItem('yunx_unf')||'[]')}catch(e){return[]}}
+function saveUnf(a){localStorage.setItem('yunx_unf',JSON.stringify(a))}
+
+function loadM(){try{return new Set(JSON.parse(localStorage.getItem('cs_mastered')||'[]'))}catch(e){return new Set()}}
+function saveM(s){try{localStorage.setItem('cs_mastered',JSON.stringify([...s]))}catch(e){}}
+function pickPool(rnd){
+  const m=loadM();const un=[],mas=[];
+  WORDS.forEach((w,i)=>{(m.has(w.w)?mas:un).push(i)});
+  const src=un.length>=10?un:un.concat(mas);
+  const u=new Set();const pool=[];
+  while(pool.length<10&&u.size<src.length){const i=src[Math.floor(rnd()*src.length)];if(!u.has(i)){u.add(i);pool.push(i)}}
+  return pool;
+}
+function today(){
+  const rnd=mulberry32(hash(todayStr()));
+  cur=pickPool(rnd).map(i=>WORDS[i]);
+  render();updateProg();
+}
+function fresh(){
+  const rnd=mulberry32(Math.floor(Math.random()*1e9));
+  cur=pickPool(rnd).map(i=>WORDS[i]);
+  render();updateProg();
+}
+
+function render(){
+  attempts={};
+  document.getElementById('scoreBox').style.display='none';
+  const studyBox=document.getElementById('studyBox');
+  const testBox=document.getElementById('testBox');
+  if(modeNow==='study'){testBox.style.display='none';studyBox.style.display='block';renderStudy();}
+  else{studyBox.style.display='none';testBox.style.display='block';shuffleTest();renderTest();}
+  const todaySet=new Set(cur.map(w=>w.w));
+  const left=WORDS.filter(w=>!todaySet.has(w.w));
+  const u=loadUnf().filter(id=>WORDS[id]&&!todaySet.has(WORDS[id].w));
+  const weekHint=document.getElementById('weekHint');
+  if(weekHint)weekHint.style.display='none';
+}
+
+function renderStudy(){
+  const b=document.getElementById('studyBox');const m2=loadM();
+  b.innerHTML='<div class="hint">今日 10 词 · 点击卡片可展开示例说明</div>'+
+   cur.map((w,i)=>`<div class="card study-card" onclick="this.classList.toggle('open')">
+     <div style="flex:1;min-width:150px"><span class="tag">${i+1}</span> <span class="w">${esc(w['w'])}</span> <span class="p">${esc(w['p'])}</span></div>
+     <div class="zh">${m2.has(w.w)?'✅ ':''}${esc(w['zh'])}</div>
+     <div class="toggle">示例说明 ▾</div>
+     <div class="detail">📦 示例：<code>${esc(w['ex'])}</code><br>💡 ${esc(w['note'])}<br>📂 ${esc(w['cat'])}</div></div>`).join('');
+}
+
+function shuffleTest(){shuffled=[...cur].sort(()=>Math.random()-0.5);}
+function renderTest(){
+  const b=document.getElementById('testList');
+  b.innerHTML=shuffled.map((w,i)=>`<div class="card test-row" id="row${i}" data-i="${i}">
+     <div class="test-q"><span class="test-zh">${esc(w['zh'])}</span><span class="test-cat">${esc(w['cat'].replace(/^.*?、/,''))}</span></div>
+     <input class="test-input" data-i="${i}" placeholder="输入英文单词/方法名" autocomplete="off" autocapitalize="off" spellcheck="false">
+     <div class="test-result">✅ <span class="ans">${esc(w['w'])}</span> <span style="color:var(--sub)">${esc(w['p'])}</span> · ${esc(w['note'])}</div>
+   </div>`).join('');
+  b.querySelectorAll('.test-input').forEach(inp=>inp.addEventListener('input',e=>{attempts[+e.target.dataset.i]=e.target.value}));
+}
+
+function norm(s){return (s||'').replace(/\s+/g,'').toLowerCase()}
+function submit(){
+  let ok=0;const m=loadM();
+  shuffled.forEach((w,i)=>{
+    const row=document.getElementById('row'+i);
+    const inp=row.querySelector('.test-input');
+    const val=inp.value;
+    const good=norm(val)===norm(w['w']);
+    if(good){ok++;m.add(w['w']);}
+    row.classList.remove('res-ok','res-bad');
+    row.classList.add(good?'res-ok':'res-bad');
+    inp.readOnly=true;
+  });
+  saveM(m);showScore(ok);updateProg();
+}
+function reveal(){
+  shuffled.forEach((w,i)=>{
+    const row=document.getElementById('row'+i);
+    row.classList.remove('res-ok','res-bad');row.classList.add('res-bad');
+    row.querySelector('.test-input').readOnly=true;
+  });
+}
+function showScore(ok){
+  const s=document.getElementById('scoreBox');
+  const pct=Math.round(ok/cur.length*100);
+  const emoji=pct===100?'🏆':pct>=80?'🎉':pct>=60?'👍':'💪';
+  s.style.display='block';
+  s.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
+    <div><b>${ok} / ${cur.length}</b> 正确 · ${emoji}</div><div>得分 ${pct}</div></div>
+    <div class="ring"><i style="width:${pct}%"></i></div>`;
+}
+let modeNow='study';
+function mode(m){modeNow=m;
+  document.getElementById('segStudy').classList.toggle('on',m==='study');
+  document.getElementById('segTest').classList.toggle('on',m==='test');
+  render();
+}
+function resetAll(){render();}
+function updateProg(){
+ const m=loadM();const el=document.getElementById('progBox');
+ if(el)el.innerHTML='📊 已掌握 <b style="color:var(--ok)">'+m.size+'</b> / '+WORDS.length+' 词'+(m.size>=WORDS.length?' 🏆 全部通关！':'');
+}
+function exportProg(){
+ const code=btoa(unescape(encodeURIComponent(JSON.stringify([...loadM()]))));
+ prompt('复制这串进度码保存好（换设备或清浏览器数据后，用「导入进度」可恢复）：',code);
+}
+function importProg(){
+ const s=prompt('粘贴之前导出的进度码：','');
+ if(!s)return;
+ try{
+  const arr=JSON.parse(decodeURIComponent(escape(atob(s.trim()))));
+  const valid=new Set(WORDS.map(w=>w.w));
+  const m=new Set(arr.filter(x=>valid.has(x)));
+  saveM(m);updateProg();today();
+  alert('导入成功！已掌握 '+m.size+' / '+WORDS.length+' 词');
+ }catch(e){alert('进度码无效，请检查是否复制完整')}
+}
+function resetProg(){
+ if(confirm('确定清空全部学习记录，从零开始？')){
+  saveM(new Set());updateProg();today();
+ }
+}
+function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+var _d=new Date();var _wd=['日','一','二','三','四','五','六'][_d.getDay()];document.getElementById('dateBox').textContent=todayStr()+' · 星期'+_wd;
+today();
+</script>
+</body>
+</html>
